@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torchvision.transforms import ToTensor
 import pickle
 from pathlib import Path
 from sklearn.preprocessing import OneHotEncoder
@@ -19,9 +20,9 @@ batch = ['data_batch_1', 'data_batch_2', 'data_batch_3', 'data_batch_4', 'data_b
 train_batches = [unpickle(data_dir / batch[i]) for i in range(5)]
 test_batch = unpickle(data_dir / 'test_batch')
 
-X = np.array([i[b'data'] for i in train_batches], dtype='float').reshape(50000,3,32,32)
+X = np.array([i[b'data'] for i in train_batches], dtype='float').reshape(50000,3,32,32)/255
 y = np.array([i[b'labels'] for i in train_batches], dtype='float').reshape(50000,1)
-X_val = np.array(test_batch[b'data'], dtype='float').reshape(10000,3,32,32)
+X_val = np.array(test_batch[b'data'], dtype='float').reshape(10000,3,32,32)/255
 y_val = np.array(test_batch[b'labels'], dtype='float').reshape(10000,1)
 
 batchsize=32
@@ -43,7 +44,6 @@ class GoodNet(nn.Module):
         self.Conv6 = nn.Sequential(nn.Conv2d(128, 128, 3, padding='same'), nn.ReLU(), nn.BatchNorm2d(128))
         self.Dense = nn.Sequential(nn.Linear(128*8*8, 1024), nn.ReLU(), nn.BatchNorm1d(1024), nn.Linear(1024, 10))
     def forward(self, x):
-        x = x.to(device)
         x = self.Norm(x)
         x = self.Conv1(x)
         x = self.Conv2(x)
@@ -64,7 +64,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.01)
 criterion = nn.CrossEntropyLoss()
 
 
-for epoch in range(2):
+for epoch in range(10):
     correct = correct_test = 0
     for i, batch in enumerate(trainloader):
         X, y = batch
